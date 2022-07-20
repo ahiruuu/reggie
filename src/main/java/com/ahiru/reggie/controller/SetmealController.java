@@ -13,6 +13,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -94,6 +96,7 @@ public class SetmealController {
 
     //新增
     @PostMapping
+    @CacheEvict(value="setmealCache", allEntries=true) //删除setmealCache下的所有缓存
     public R<String> save(@RequestBody SetmealDto setmealDto){
 
         setmealService.saveWithDish(setmealDto);
@@ -103,6 +106,7 @@ public class SetmealController {
 
     //修改
     @PutMapping
+    @CacheEvict(value="setmealCache", allEntries=true) //删除setmealCache下的所有缓存
     public R<String> update(@RequestBody SetmealDto setmealDto){
 
         setmealService.updateWithDish(setmealDto);
@@ -113,6 +117,7 @@ public class SetmealController {
 
     //删除,支持批量, ?ids=1397860963880316929,1397860792492666881
     @DeleteMapping()
+    @CacheEvict(value="setmealCache", allEntries=true) //删除setmealCache下的所有缓存
     @Transactional //应该写到service里比较好，懒得改了
     public R<String> delete(@RequestParam List<String> ids){  //自动封装为list
         //先查询套餐状态，只有停售的可以删除，否则抛出业务异常
@@ -148,7 +153,9 @@ public class SetmealController {
         return R.success("启售停售修改成功");
     }
 
+
     //按分类查套餐列表，setmeal/list?categoryId=1397844263642378242&status=1，get
+    @Cacheable(value = "setmealCache", key = "#setmeal.categoryId+'_'+#setmeal.status") //SpringCache缓存注解
     @GetMapping(value="/list")
     public R<List<Setmeal>> getByCategoryId(Setmeal setmeal){
 
